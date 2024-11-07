@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سجل العملاء</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        h3 {
+            color: #333;
+        }
+        input, select, textarea, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .search-result {
+            padding: 8px;
+            cursor: pointer;
+            background-color: #e0e0e0;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+        .search-result:hover {
+            background-color: #c0c0c0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button id="search-client-btn">ابحث عن عميل</button>
+        <div id="search-area" style="display: none;">
+            <input type="text" id="client-search" placeholder="ادخل اسم العميل" oninput="searchClient()">
+            <div id="search-results"></div>
+            <button onclick="showAddClientForm()">+</button>
+        </div>
+        
+        <div id="add-client-form" style="display: none;">
+            <h3>إضافة عميل جديد</h3>
+            <input type="text" id="client-name" placeholder="اسم العميل">
+            <input type="text" id="captain-name" placeholder="اسم الكابتن">
+            <label>هل العميل أول مرة يسوق؟</label>
+            <select id="first-time">
+                <option value="yes">نعم</option>
+                <option value="no">لا</option>
+            </select>
+            <button onclick="showTrainingForm()">استمرار</button>
+        </div>
+
+        <div id="training-form" style="display: none;">
+            <h3 id="training-title">تفاصيل التدريب</h3>
+            <label>التاريخ والوقت:</label>
+            <p id="session-datetime"></p>
+            <label>اختر رقم الحصة:</label>
+            <select id="session-number" onchange="showSkills()">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+                <option value="11">11</option>
+                <option value="12">12</option>
+                <option value="13">13</option>
+            </select>
+            <div id="skills-area">
+                <!-- سيتم عرض المهارات هنا كنقاط اختيار بناءً على رقم الحصة -->
+            </div>
+            <label>ملاحظات:</label>
+            <textarea id="notes" rows="4" placeholder="أدخل ملاحظاتك هنا..."></textarea>
+            <label>الطرق:</label>
+            <textarea id="roads" rows="2" placeholder="أدخل الطرق التي مشيت فيها..."></textarea>
+            <button onclick="finishSession()">إنهاء الحصة</button>
+        </div>
+    </div>
+
+    <script>
+        let clients = JSON.parse(localStorage.getItem("clients")) || [];
+
+        document.getElementById("search-client-btn").onclick = function() {
+            document.getElementById("search-area").style.display = "block";
+        };
+
+        function showAddClientForm() {
+            document.getElementById("add-client-form").style.display = "block";
+        }
+
+        function showTrainingForm() {
+            let isFirstTime = document.getElementById("first-time").value;
+            document.getElementById("training-form").style.display = "block";
+            document.getElementById("training-title").innerText = isFirstTime === "yes" ? "نموذج أكاديمية ياسر يحيى لأول مرة" : "نموذج التقييم";
+            showCurrentDateTime();
+            showSkills();
+        }
+
+        function showCurrentDateTime() {
+            let now = new Date();
+            let datetime = now.toLocaleDateString("ar-EG") + " " + now.toLocaleTimeString("ar-EG");
+            document.getElementById("session-datetime").innerText = datetime;
+        }
+
+        function showSkills() {
+            let sessionNumber = document.getElementById("session-number").value;
+            let skillsArea = document.getElementById("skills-area");
+            skillsArea.innerHTML = ""; 
+            
+            let skillsList = [];
+            if (sessionNumber <= 9) {
+                if (sessionNumber == "1") {
+                    skillsList = ["الفحص", "التهدئة", "التحكم", "الانطلاق"];
+                } else if (sessionNumber == "2") {
+                    skillsList = ["استخدام الإشارات", "الالتفاف يمين ويسار", "التوجيه"];
+                } else if (sessionNumber == "3") {
+                    skillsList = ["التقدير", "القيادة في الشوارع الضيقة", "الأمان"];
+                } else if (sessionNumber == "4") {
+                    skillsList = ["النظر الصحيح", "التفاعل مع الطريق", "الثبات في المسار"];
+                }
+                // يمكنك إضافة بقية المهارات للحصص حتى 9
+            } else {
+                // إضافة placeholder للحصص 10 وما بعدها
+                skillsList = ["ملاحظات", "الطرق"];
+            }
+
+            skillsList.forEach(skill => {
+                let checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.id = skill;
+                checkbox.name = "skills";
+                checkbox.value = skill;
+
+                let label = document.createElement("label");
+                label.htmlFor = skill;
+                label.appendChild(document.createTextNode(skill));
+
+                let div = document.createElement("div");
+                div.appendChild(checkbox);
+                div.appendChild(label);
+
+                skillsArea.appendChild(div);
+            });
+        }
+
+        function searchClient() {
+            let searchTerm = document.getElementById("client-search").value.toLowerCase();
+            let results = clients.filter(client => client.name.toLowerCase().startsWith(searchTerm));
+            let resultsDiv = document.getElementById("search-results");
+            resultsDiv.innerHTML = "";
+            results.forEach(client => {
+                let div = document.createElement("div");
+                div.classList.add("search-result");
+                div.textContent = client.name;
+                div.onclick = () => loadClientData(client);
+                resultsDiv.appendChild(div);
+            });
+        }
+
+        function loadClientData(client) {
+            document.getElementById("client-name").value = client.name;
+            document.getElementById("captain-name").value = client.captain;
+            document.getElementById("training-form").style.display = "block";
+        }
+
+        function finishSession() {
+            submitData();
+            alert("تم إنهاء الحصة وإرسال البيانات بنجاح!");
+        }
+
+        function submitData() {
+            let clientName = document.getElementById("client-name").value;
+            let captainName = document.getElementById("captain-name").value;
+            let notes = document.getElementById("notes").value;
+            let roads = document.getElementById("roads").value;
+            let sessionNumber = document.getElementById("session-number").value;
+            let datetime = document.getElementById("session-datetime").innerText;
+
+            let newClient = {
+                name: clientName,
+                captain: captainName,
+                session: sessionNumber,
+                datetime: datetime,
+                notes: notes,
+                roads: roads
+            };
+
+            clients.push(newClient);
+            localStorage.setItem("clients", JSON.stringify(clients));
+        }
+    </script>
+</body>
+</html>
